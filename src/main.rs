@@ -19,9 +19,6 @@ struct Renderable
 }
 
 #[derive(Component)]
-struct LeftMover {}
-
-#[derive(Component)]
 struct Player {}
 
 struct State 
@@ -77,28 +74,10 @@ impl GameState for State
     }
 }
 
-struct LeftWalker {}
-
-impl<'a> System<'a> for LeftWalker 
-{
-    type SystemData = (ReadStorage<'a, LeftMover>,
-                        WriteStorage<'a, Position>);
-    fn run(&mut self, (left_mover, mut position) : Self::SystemData)
-    {
-        for (_left_mover, pos) in (&left_mover, &mut position).join() 
-        {
-            pos.x -= 1;
-            if pos.x < 0 { pos.x = 79; }
-        }
-    }
-}
-
 impl State 
 {
     fn run_systems(&mut self)
     {
-        let mut lw = LeftWalker{};
-        lw.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -115,7 +94,6 @@ fn main() -> rltk::BError
     };
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
-    gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
 
     // Player
@@ -129,20 +107,6 @@ fn main() -> rltk::BError
         })
         .with(Player{})
         .build();
-
-    for i in 0..10 
-    {
-        gs.ecs
-        .create_entity()
-        .with(Position { x: i * 7, y: 20 })
-        .with(Renderable {
-            glyph: rltk::to_cp437('☺'),
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-        })
-        .with(LeftMover{})
-        .build();
-    }
 
     rltk::main_loop(context, gs)
 }
