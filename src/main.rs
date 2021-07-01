@@ -165,7 +165,7 @@ fn main() -> rltk::BError
 {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
-        .with_title("Roguelike Tutorial")
+        .with_title("Roguelike Rust")
         .build()?;
     let mut gs = State 
     { 
