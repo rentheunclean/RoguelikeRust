@@ -1,6 +1,6 @@
-use rltk::{VirtualKeyCode, Rltk};
+use rltk::{VirtualKeyCode, Rltk, Point};
 use specs::prelude::*;
-use super::{Position, Player, Viewshed, TileType, State, Map};
+use super::{Position, Player, Viewshed, TileType, State, Map, RunState};
 use std::cmp::{min, max};
 
 
@@ -20,16 +20,19 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World)
             pos.y = min(49, max(0, pos.y + delta_y));
 
             viewshed.dirty = true;
+            let mut ppos = ecs.write_resource::<Point>();
+            ppos.x = pos.x;
+            ppos.y = pos.y;
         }
     }
 }
 
-pub fn player_input(gs: &mut State, ctx: &mut Rltk)
+pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState
 {
     // Player movement
     match ctx.key 
     {
-        None => {} // nothing happened
+        None => { return RunState::Paused } // nothing happened
         Some(key) => match key
         {
             VirtualKeyCode::Left |
@@ -48,8 +51,9 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk)
             VirtualKeyCode::Numpad2 |
             VirtualKeyCode::J => try_move_player(0, 1, &mut gs.ecs),
             
-            _ => {}
+            _ => { return RunState::Paused }
         },
     }
+    RunState::Running
 }
 
