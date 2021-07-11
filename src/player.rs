@@ -3,7 +3,6 @@ use specs::prelude::*;
 use super::{ Position, Player, Viewshed, CombatStats, State, Map, RunState, WantsToMelee };
 use std::cmp::{min, max};
 
-
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) 
 {
     let mut positions = ecs.write_storage::<Position>();
@@ -35,8 +34,8 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World)
 
         if !map.blocked[destination_idx]
         {
-            pos.x = min(79, max(0, pos.x + delta_x));
-            pos.y = min(49, max(0, pos.y + delta_y));
+            pos.x = min(crate::MAPWIDTH as i32 - 1, max(0, pos.x + delta_x));
+            pos.y = min(crate::MAPHEIGHT as i32 - 1, max(0, pos.y + delta_y));
 
             viewshed.dirty = true;
             let mut ppos = ecs.write_resource::<Point>();

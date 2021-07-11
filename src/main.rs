@@ -19,6 +19,9 @@ mod melee_combat_system;
 pub use melee_combat_system::MeleeCombatSystem;
 mod damage_system;
 pub use damage_system::DamageSystem;
+mod gui;
+mod gamelog;
+
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState { AwaitingInput, PreRun, PlayerTurn, MonsterTurn }
@@ -109,6 +112,8 @@ impl GameState for State
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
             }
         }
+
+        gui::draw_ui(&self.ecs, ctx);
     }
 }
 
@@ -118,6 +123,7 @@ fn main() -> rltk::BError
     let context = RltkBuilder::simple80x50()
         .with_title("Roguelike Rust")
         .build()?;
+
     let mut gs = State 
     { 
         ecs: World::new(),
@@ -182,11 +188,12 @@ fn main() -> rltk::BError
             .with(CombatStats{ max_hp: 16, hp: 16, defense: 1, power: 4 })
             .build();
     }
-
+    
+    gs.ecs.insert(RunState::PreRun);
     gs.ecs.insert(map);
+    gs.ecs.insert(gamelog::GameLog{entries : vec!["Welcome to Roguelike Rust".to_string()]});
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(player_entity);
-    gs.ecs.insert(RunState::PreRun);
 
     rltk::main_loop(context, gs)
 }
