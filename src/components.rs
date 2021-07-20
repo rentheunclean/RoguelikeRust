@@ -32,6 +32,15 @@ pub struct Viewshed
 pub struct Monster {}
 
 #[derive(Component, Debug)]
+pub struct Item {}
+
+#[derive(Component, Debug)]
+pub struct Potion 
+{
+    pub heal_amount : i32
+}
+
+#[derive(Component, Debug)]
 pub struct Name
 {
     pub name : String,
