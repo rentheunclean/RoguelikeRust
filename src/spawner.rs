@@ -1,7 +1,8 @@
-use rltk::{ RGB, RandomNumberGenerator, console };
+use rltk::{ RGB, RandomNumberGenerator };
 use specs::prelude::*;
 use super::{CombatStats, Player, Renderable, Name, Position, Viewshed, 
-            Monster, BlocksTile, Rect, map::MAPWIDTH, Item, Potion };
+            Monster, BlocksTile, Rect, map::MAPWIDTH, Item, Potion,
+             };
 
 // Spawns the player and returns his/her entity object.
 pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity
@@ -13,6 +14,7 @@ pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
+            render_order: 0,
         })
         .with(Player{})
         .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
@@ -32,7 +34,7 @@ pub fn spawn_room(ecs: &mut World, room : &Rect)
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         let num_monsters = rng.roll_dice(1, MAX_MONSTERS + 2) - 3;
-        let num_items = rng.roll_dice(1, MAX_ITEMS + 2) - 3;
+        let num_items = rng.roll_dice(1, MAX_ITEMS + 2) - 2;
 
         for _i in 0 .. num_monsters
         {
@@ -108,6 +110,7 @@ fn monster<S :ToString>(ecs: &mut World, x: i32, y: i32, glyph : rltk::FontCharT
             glyph: glyph,
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
+            render_order: 1,
         })
         .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
         .with(Monster{})
@@ -125,6 +128,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32)
             glyph: rltk::to_cp437('i'),
             fg: RGB::named(rltk::MAGENTA),
             bg: RGB::named(rltk::BLACK),
+            render_order: 2,
         })
         .with(Name{ name : "Health Potion".to_string() })
         .with(Item{})

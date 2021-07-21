@@ -19,12 +19,15 @@ mod melee_combat_system;
 pub use melee_combat_system::MeleeCombatSystem;
 mod damage_system;
 pub use damage_system::DamageSystem;
+mod inventory_system;
+pub use inventory_system::ItemCollectionSystem;
+pub use inventory_system::PotionUseSystem;
 mod gui;
 mod gamelog;
 mod spawner;
 
 #[derive(PartialEq, Copy, Clone)]
-pub enum RunState { AwaitingInput, PreRun, PlayerTurn, MonsterTurn }
+pub enum RunState { AwaitingInput, PreRun, PlayerTurn, MonsterTurn, ShowInventory }
 
 pub struct State 
 {
@@ -50,6 +53,12 @@ impl State
         let mut damage = DamageSystem{};
         damage.run_now(&self.ecs);
 
+        let mut pickup = ItemCollectionSystem{};
+        pickup.run_now(&self.ecs);
+
+        let mut potions = PotionUseSystem{};
+        potions.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -59,6 +68,28 @@ impl GameState for State
     fn tick(&mut self, ctx : &mut Rltk) 
     {
         ctx.cls();
+        
+        draw_map(&self.ecs, ctx);
+        
+        {
+            let positions = self.ecs.read_storage::<Position>();
+            let renderables = self.ecs.read_storage::<Renderable>();
+            let map = self.ecs.fetch::<Map>();
+
+            let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
+            data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order) );
+            for (pos, render) in data.iter()
+            {
+                let idx = map.xy_idx(pos.x, pos.y);
+                if map.visible_tiles[idx]
+                {
+                    ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+                }
+            }
+
+            gui::draw_ui(&self.ecs, ctx);
+        }
+
         let mut newrunstate;
         {
             let runstate = self.ecs.fetch::<RunState>();
@@ -70,23 +101,44 @@ impl GameState for State
             RunState::PreRun =>
             {
                 self.run_systems();
+                self.ecs.maintain();
                 newrunstate = RunState::AwaitingInput;
             }
             RunState::AwaitingInput =>
             {
                 self.run_systems();
+                self.ecs.maintain();
                 // TODO: shouldn't this return true/false and let THIS function handle what comes next?
                 newrunstate = player_input(self, ctx);
             }
             RunState::PlayerTurn =>
             {
                 self.run_systems();
+                self.ecs.maintain();
                 newrunstate = RunState::MonsterTurn;
             }
             RunState::MonsterTurn =>
             {
                 self.run_systems();
+                self.ecs.maintain();
                 newrunstate = RunState::AwaitingInput;
+            }
+            RunState::ShowInventory =>
+            {
+                let result = gui::show_inventory(self, ctx);
+                match result.0
+                {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected =>
+                    {
+                        let item_entity = result.1.unwrap();
+                        let mut intent = self.ecs.write_storage::<WantsToDrinkPotion>();
+                        intent.insert(*self.ecs.fetch::<Entity>(), WantsToDrinkPotion { potion: item_entity })
+                            .expect("Unable to insert intent");
+                        newrunstate = RunState::PlayerTurn;
+                    }
+                }
             }
         }
 
@@ -97,23 +149,6 @@ impl GameState for State
 
         // TODO: can this be called in the damage system itself?
         damage_system::delete_the_dead(&mut self.ecs);
-
-        draw_map(&self.ecs, ctx);
-
-        let positions = self.ecs.read_storage::<Position>();
-        let renderables = self.ecs.read_storage::<Renderable>();
-        let map = self.ecs.fetch::<Map>();
-
-        for (pos, render) in (&positions, &renderables).join() 
-        {
-            let idx = map.xy_idx(pos.x, pos.y);
-            if map.visible_tiles[idx]
-            {
-                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
-            }
-        }
-
-        gui::draw_ui(&self.ecs, ctx);
     }
 }
 
@@ -134,6 +169,9 @@ fn main() -> rltk::BError
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Item>();
+    gs.ecs.register::<InBackpack>();
+    gs.ecs.register::<WantsToPickupItem>();
+    gs.ecs.register::<WantsToDrinkPotion>();
     gs.ecs.register::<Potion>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
