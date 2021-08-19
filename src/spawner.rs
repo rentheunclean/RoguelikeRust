@@ -2,7 +2,8 @@ use rltk::{ RGB, RandomNumberGenerator };
 use specs::prelude::*;
 use super::{CombatStats, Player, Renderable, Name, Position, Viewshed, 
             Monster, BlocksTile, Rect, map::MAPWIDTH, Item, ProvidesHealing,
-            Consumable, InflictsDamage, Ranged, Confusion, AreaOfEffect};
+            Consumable, InflictsDamage, Ranged, Confusion, AreaOfEffect, SerializeMe, };
+use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 // Spawns the player and returns his/her entity object.
 pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity
@@ -20,6 +21,7 @@ pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity
         .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
         .with(Name{ name: "Player".to_string() })
         .with(CombatStats{ max_hp: 30, hp: 30, defense: 2, power: 5 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
 
@@ -133,6 +135,7 @@ fn monster<S :ToString>(ecs: &mut World, x: i32, y: i32, glyph : rltk::FontCharT
         .with(Name{ name : name.to_string() })
         .with(BlocksTile{})
         .with(CombatStats{ max_hp: 16, hp: 16, defense: 1, power: 4 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -150,6 +153,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32)
         .with(Item{})
         .with(Consumable{})
         .with(ProvidesHealing{ heal_amount: 8 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -168,6 +172,7 @@ fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32)
         .with(Consumable{})
         .with(InflictsDamage{ damage: 8 })
         .with(Ranged{ range: 6 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -187,6 +192,7 @@ fn fireball_scroll(ecs: &mut World, x: i32, y: i32)
         .with(Ranged{ range: 6 })
         .with(InflictsDamage{ damage: 8 })
         .with(AreaOfEffect{ radius: 3 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -205,5 +211,6 @@ fn confusion_scroll(ecs: &mut World, x: i32, y: i32)
         .with(Consumable{})
         .with(Ranged{ range: 6 })
         .with(Confusion{ turns: 4 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

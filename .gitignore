@@ -1,3 +1,5 @@
 /target
 /.vs
 src/.vs/
+
+savegame.json

@@ -1,7 +1,7 @@
 use rltk::{VirtualKeyCode, Rltk, Point};
 use specs::prelude::*;
 use super::{ Position, Player, Viewshed, CombatStats, State, Map, RunState, WantsToMelee,
-             Item, gamelog::GameLog, WantsToPickupItem};
+             Item, gamelog::GameLog, WantsToPickupItem, gui};
 use std::cmp::{min, max};
 
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) 
@@ -116,6 +116,16 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState
             VirtualKeyCode::G => get_item(&mut gs.ecs),
 
             VirtualKeyCode::I => return RunState::ShowInventory,
+
+            // Save and Quit
+            VirtualKeyCode::F5 => 
+            {
+                let mut gamelog = gs.ecs.fetch_mut::<GameLog>();
+                gamelog.entries.push("Saving game...".to_string());
+                return RunState::SaveGame;
+            }
+
+            VirtualKeyCode::Escape => return RunState::QuitGame,
 
             _ => { return RunState::AwaitingInput }
         },
