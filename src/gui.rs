@@ -367,3 +367,21 @@ pub fn main_menu(gs : &mut State, ctx : &mut Rltk) -> MainMenuResult
 
     MainMenuResult::NoSelection { selected: MainMenuSelection::NewGame }
 }
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum GameOverResult { NoSelection, QuitToMenu }
+
+pub fn game_over(ctx : &mut Rltk) -> GameOverResult 
+{
+    ctx.print_color_centered(15, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "You have died!");
+    ctx.print_color_centered(17, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Score/results screen to be added");
+    ctx.print_color_centered(18, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "In the future");
+
+    ctx.print_color_centered(20, RGB::named(rltk::MAGENTA), RGB::named(rltk::BLACK), "Press any key to return to the menu.");
+
+    match ctx.key 
+    {
+        None => GameOverResult::NoSelection,
+        Some(_) => GameOverResult::QuitToMenu
+    }
+}

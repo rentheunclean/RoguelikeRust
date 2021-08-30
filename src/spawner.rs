@@ -40,7 +40,9 @@ fn room_table(map_depth: i32) -> RandomTable
         .add("Confusion Scroll", 2 + map_depth)
         .add("Magic Missile Scroll", 4)
         .add("Dagger", 3)
+        .add("Longsword", map_depth - 1)
         .add("Shield", 3)
+        .add("Tower Shield", map_depth - 1)
 }
 
 pub fn spawn_room(ecs: &mut World, room : &Rect, map_depth: i32)
@@ -88,7 +90,9 @@ pub fn spawn_room(ecs: &mut World, room : &Rect, map_depth: i32)
             "Confusion Scroll" => confusion_scroll(ecs, x, y),
             "Magic Missile Scroll" => magic_missile_scroll(ecs, x, y),
             "Dagger" => dagger(ecs, x, y),
+            "Longsword" => longsword(ecs, x, y),
             "Shield" => shield(ecs, x, y),
+            "Tower Shield" => tower_shield(ecs, x, y),
             _ => {}
         }
     }
@@ -210,6 +214,24 @@ fn dagger(ecs: &mut World, x: i32, y: i32)
         .build();
 }
 
+fn longsword(ecs: &mut World, x: i32, y: i32)
+{
+    ecs.create_entity()
+        .with(Position{ x, y })
+        .with(Renderable{
+            glyph: rltk::to_cp437('/'),
+            fg: RGB::named(rltk::YELLOW),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2
+        })
+        .with(Name{ name : "Longsword".to_string() })
+        .with(Item{})
+        .with(Equippable{ slot: EquipmentSlot::Melee })
+        .with(MeleePowerBonus{ power: 4 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
 fn shield(ecs: &mut World, x: i32, y: i32)
 {
     ecs.create_entity()
@@ -224,6 +246,24 @@ fn shield(ecs: &mut World, x: i32, y: i32)
         .with(Item{})
         .with(Equippable{ slot: EquipmentSlot::Shield })
         .with(DefenseBonus{ defense: 1 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn tower_shield(ecs: &mut World, x: i32, y: i32)
+{
+    ecs.create_entity()
+        .with(Position{ x, y })
+        .with(Renderable{
+            glyph: rltk::to_cp437('('),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2
+        })
+        .with(Name{ name : "Tower Shield".to_string() })
+        .with(Item{})
+        .with(Equippable{ slot: EquipmentSlot::Shield })
+        .with(DefenseBonus{ defense: 3 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
