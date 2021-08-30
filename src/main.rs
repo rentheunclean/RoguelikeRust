@@ -24,6 +24,7 @@ pub use damage_system::DamageSystem;
 mod inventory_system;
 pub use inventory_system::ItemCollectionSystem;
 pub use inventory_system::ItemUseSystem;
+pub use inventory_system::ItemRemoveSystem;
 mod gui;
 mod gamelog;
 mod spawner;
@@ -37,6 +38,7 @@ pub enum RunState {
     PlayerTurn, 
     MonsterTurn, 
     ShowInventory,
+    ShowRemoveItem,
     ShowTargeting { range : i32, item : Entity },
     MainMenu { menu_selection : gui::MainMenuSelection },
     SaveGame,
@@ -74,6 +76,9 @@ impl State
         let mut items = ItemUseSystem{};
         items.run_now(&self.ecs);
 
+        let mut item_remove = ItemRemoveSystem{};
+        item_remove.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 
@@ -82,6 +87,7 @@ impl State
         let entities = self.ecs.entities();
         let player = self.ecs.read_storage::<Player>();
         let backpack = self.ecs.read_storage::<InBackpack>();
+        let equipped = self.ecs.read_storage::<Equipped>();
         let player_entity = self.ecs.fetch::<Entity>();
 
         let mut to_delete : Vec<Entity> = Vec::new();
@@ -99,6 +105,15 @@ impl State
             if let Some(bp) = bp
             {
                 if bp.owner == *player_entity
+                {
+                    continue
+                }
+            }
+
+            let eq = equipped.get(entity);
+            if let Some(eq) = eq
+            {
+                if eq.owner == *player_entity
                 {
                     continue
                 }
@@ -261,6 +276,23 @@ impl GameState for State
                     }
                 }
             }
+            RunState::ShowRemoveItem =>
+            {
+                let result = gui::remove_item_menu(self, ctx);
+                match result.0
+                {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => 
+                    {
+                        let item_entity = result.1.unwrap();
+                        let mut intent = self.ecs.write_storage::<WantsToRemoveItem>();
+                        intent.insert(*self.ecs.fetch::<Entity>(), WantsToRemoveItem{ item: item_entity })
+                            .expect("Unable to insert intent");
+                        newrunstate = RunState::PlayerTurn;
+                    }
+                }
+            }
             RunState::ShowTargeting{range, item} =>
             {
                 let result = gui::ranged_target(self, ctx, range);
@@ -346,6 +378,7 @@ fn main() -> rltk::BError
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseItem>();
+    gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<ProvidesHealing>();
     gs.ecs.register::<InflictsDamage>();
     gs.ecs.register::<Ranged>();
@@ -359,6 +392,10 @@ fn main() -> rltk::BError
     gs.ecs.register::<AreaOfEffect>();
     gs.ecs.register::<SimpleMarker<SerializeMe>>();
     gs.ecs.register::<SerializationHelper>();
+    gs.ecs.register::<Equippable>();
+    gs.ecs.register::<Equipped>();
+    gs.ecs.register::<MeleePowerBonus>();
+    gs.ecs.register::<DefenseBonus>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 

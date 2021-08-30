@@ -138,6 +138,8 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState
 
             VirtualKeyCode::I => return RunState::ShowInventory,
 
+            VirtualKeyCode::R => return RunState::ShowRemoveItem,
+
             // Level changes
             VirtualKeyCode::Period => 
             {
